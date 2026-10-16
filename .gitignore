@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Builds (pyinstaller packaging/ck-dps-solver.spec, python -m build)
+/build/
+/dist/
+*.zip
+
+# Local developer files
+/.claude/
+/.vscode/
+/.idea/
+/tools/wiki/cache/
+/tools/wiki/update_report.md
+
+# The app keeps settings, results and logs in %LOCALAPPDATA%\ck-dps-solver; these guard against old copies here
+/gui_config.json
+/presets.json
+/qt_window.ini
+/crash*.log*
+/self_test.log
+/outputs/
+/filter/

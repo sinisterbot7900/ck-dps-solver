@@ -1,0 +1,461 @@
+{
+ "source": "Core Keeper Fandom wiki (https://core-keeper.fandom.com), CC BY-SA; navbox of \"Melee combat\"",
+ "skills": {
+  "Mining": {
+   "name": "Mining",
+   "icon": "mining.png",
+   "talents": [
+    {
+     "name": "Efficient excavation",
+     "icon": "efficientexcavation.png"
+    },
+    {
+     "name": "Meticulous miner",
+     "icon": "meticulousminer.png"
+    },
+    {
+     "name": "Self-mending alloy",
+     "icon": "selfmendingalloy.png"
+    },
+    {
+     "name": "Miner's strength",
+     "icon": "minersstrength.png"
+    },
+    {
+     "name": "Mine, mine, mine!",
+     "icon": "mineminemine.png"
+    },
+    {
+     "name": "Explosives engineer",
+     "icon": "explosivesengineer.png"
+    },
+    {
+     "name": "Pick and run!",
+     "icon": "pickandrun.png"
+    },
+    {
+     "name": "Archaeologist",
+     "icon": "archaeologist.png"
+    }
+   ]
+  },
+  "Running": {
+   "name": "Running",
+   "icon": "running.png",
+   "talents": [
+    {
+     "name": "Endurance runner",
+     "icon": "endurancerunner.png"
+    },
+    {
+     "name": "Balanced stance",
+     "icon": "balancedstance.png"
+    },
+    {
+     "name": "Gotta go fast!",
+     "icon": "gottagofast.png"
+    },
+    {
+     "name": "On your toes",
+     "icon": "onyourtoes.png"
+    },
+    {
+     "name": "Escape artist",
+     "icon": "escapeartist.png"
+    },
+    {
+     "name": "Keeping tempo",
+     "icon": "keepingtempo.png"
+    },
+    {
+     "name": "Encumbering presence",
+     "icon": "encumberingpresence.png"
+    },
+    {
+     "name": "Breaking barriers",
+     "icon": "breakingbarriers.png"
+    }
+   ]
+  },
+  "Melee": {
+   "name": "Melee combat",
+   "icon": "meleecombat.png",
+   "talents": [
+    {
+     "name": "Quick strikes",
+     "icon": "quickstrikes.png"
+    },
+    {
+     "name": "Building anger",
+     "icon": "buildinganger.png"
+    },
+    {
+     "name": "Fast and furious",
+     "icon": "fastandfurious.png"
+    },
+    {
+     "name": "Heavy swings",
+     "icon": "heavyswings.png"
+    },
+    {
+     "name": "Stubborn fighter",
+     "icon": "stubbornfighter.png"
+    },
+    {
+     "name": "Taking a step back",
+     "icon": "takingastepback.png"
+    },
+    {
+     "name": "Seething blade",
+     "icon": "seethingblade.png"
+    },
+    {
+     "name": "Strength of the Ancients",
+     "icon": "strengthoftheancients.png"
+    }
+   ]
+  },
+  "Vitality": {
+   "name": "Vitality",
+   "icon": "vitality.png",
+   "talents": [
+    {
+     "name": "Maxed out!",
+     "icon": "maxedout.png"
+    },
+    {
+     "name": "Strong and healthy",
+     "icon": "strongandhealthy.png"
+    },
+    {
+     "name": "Desperate fighter",
+     "icon": "desperatefighter.png"
+    },
+    {
+     "name": "Stayin' alive",
+     "icon": "stayinalive.png"
+    },
+    {
+     "name": "Healing potency",
+     "icon": "healingpotency.png"
+    },
+    {
+     "name": "Lingering potions",
+     "icon": "lingeringpotions.png"
+    },
+    {
+     "name": "Protection of the Ancients",
+     "icon": "protectionoftheancients.png"
+    },
+    {
+     "name": "Cheat death",
+     "icon": "cheatdeath.png"
+    }
+   ]
+  },
+  "Crafting": {
+   "name": "Crafting",
+   "icon": "crafting.png",
+   "talents": [
+    {
+     "name": "Base builder",
+     "icon": "basebuilder.png"
+    },
+    {
+     "name": "The right tools in the right hands",
+     "icon": "therighttoolsintherighthands.png"
+    },
+    {
+     "name": "High quality equipment",
+     "icon": "highqualityequipment.png"
+    },
+    {
+     "name": "Alchemist",
+     "icon": "alchemist.png"
+    },
+    {
+     "name": "Industry specialist",
+     "icon": "industryspecialist.png"
+    },
+    {
+     "name": "Blacksmith",
+     "icon": "blacksmith.png"
+    },
+    {
+     "name": "Jewelry crafter",
+     "icon": "jewelrycrafter.png"
+    },
+    {
+     "name": "Unbreakable",
+     "icon": "unbreakable.png"
+    }
+   ]
+  },
+  "Range": {
+   "name": "Range combat",
+   "icon": "rangecombat.png",
+   "talents": [
+    {
+     "name": "Rapid shots",
+     "icon": "rapidshots.png"
+    },
+    {
+     "name": "Keeping momentum",
+     "icon": "keepingmomentum.png"
+    },
+    {
+     "name": "Weakness detection",
+     "icon": "weaknessdetection.png"
+    },
+    {
+     "name": "Slimy bullets",
+     "icon": "slimybullets.png"
+    },
+    {
+     "name": "Charging in",
+     "icon": "chargingin.png"
+    },
+    {
+     "name": "Stun shot",
+     "icon": "stunshot.png"
+    },
+    {
+     "name": "Focused accuracy",
+     "icon": "focusedaccuracy.png"
+    },
+    {
+     "name": "Amplified precision",
+     "icon": "amplifiedprecision.png"
+    }
+   ]
+  },
+  "Gardening": {
+   "name": "Gardening",
+   "icon": "gardening.png",
+   "talents": [
+    {
+     "name": "Grateful gardener",
+     "icon": "gratefulgardener.png"
+    },
+    {
+     "name": "Eat your vegetables!",
+     "icon": "eatyourvegetables.png"
+    },
+    {
+     "name": "Feast for the eyes",
+     "icon": "feastfortheeyes.png"
+    },
+    {
+     "name": "Thorny weapons",
+     "icon": "thornyweapons.png"
+    },
+    {
+     "name": "Thorny skin",
+     "icon": "thornyskin.png"
+    },
+    {
+     "name": "Poison coated weapons",
+     "icon": "poisoncoatedweapons.png"
+    },
+    {
+     "name": "Expert gardener",
+     "icon": "expertgardener.png"
+    },
+    {
+     "name": "Potent poison",
+     "icon": "potentpoison.png"
+    }
+   ]
+  },
+  "Fishing": {
+   "name": "Fishing",
+   "icon": "fishing.png",
+   "talents": [
+    {
+     "name": "Improved bait",
+     "icon": "improvedbait.png"
+    },
+    {
+     "name": "Fisherman's luck",
+     "icon": "fishermansluck.png"
+    },
+    {
+     "name": "Angler's advantage",
+     "icon": "anglersadvantage.png"
+    },
+    {
+     "name": "Studied patterns",
+     "icon": "studiedpatterns.png"
+    },
+    {
+     "name": "Steady feet",
+     "icon": "steadyfeet.png"
+    },
+    {
+     "name": "Chewy bait",
+     "icon": "chewybait.png"
+    },
+    {
+     "name": "Well-trained aim",
+     "icon": "welltrainedaim.png"
+    },
+    {
+     "name": "Power of Omega-3!",
+     "icon": "powerofomega3.png"
+    }
+   ]
+  },
+  "Cooking": {
+   "name": "Cooking",
+   "icon": "cooking.png",
+   "talents": [
+    {
+     "name": "Utilizing every nutrient",
+     "icon": "utilizingeverynutrient.png"
+    },
+    {
+     "name": "Not so picky",
+     "icon": "notsopicky.png"
+    },
+    {
+     "name": "Healthy diet",
+     "icon": "healthydiet.png"
+    },
+    {
+     "name": "Fast food",
+     "icon": "fastfood.png"
+    },
+    {
+     "name": "Long-lasting food",
+     "icon": "longlastingfood.png"
+    },
+    {
+     "name": "The smell of food",
+     "icon": "thesmelloffood.png"
+    },
+    {
+     "name": "Master chef",
+     "icon": "masterchef.png"
+    },
+    {
+     "name": "Sharing is caring",
+     "icon": "sharingiscaring.png"
+    }
+   ]
+  },
+  "Magic": {
+   "name": "Magic",
+   "icon": "magic.png",
+   "talents": [
+    {
+     "name": "True sight",
+     "icon": "truesight.png"
+    },
+    {
+     "name": "Mana channeling",
+     "icon": "manachanneling.png"
+    },
+    {
+     "name": "Arcane frenzy",
+     "icon": "arcanefrenzy.png"
+    },
+    {
+     "name": "The best offense",
+     "icon": "thebestoffense.png"
+    },
+    {
+     "name": "Mental defense",
+     "icon": "mentaldefense.png"
+    },
+    {
+     "name": "Arcane transfusion",
+     "icon": "arcanetransfusion.png"
+    },
+    {
+     "name": "Fully charged",
+     "icon": "fullycharged.png"
+    },
+    {
+     "name": "Mana recharge",
+     "icon": "manarecharge.png"
+    }
+   ]
+  },
+  "Summoning": {
+   "name": "Summoning",
+   "icon": "summoning.png",
+   "talents": [
+    {
+     "name": "Efficient binding",
+     "icon": "efficientbinding.png"
+    },
+    {
+     "name": "Ferocious creatures",
+     "icon": "ferociouscreatures.png"
+    },
+    {
+     "name": "Critical command",
+     "icon": "criticalcommand.png"
+    },
+    {
+     "name": "Trickle down arcana",
+     "icon": "trickledownarcana.png"
+    },
+    {
+     "name": "Tough gang",
+     "icon": "toughgang.png"
+    },
+    {
+     "name": "Group effort",
+     "icon": "groupeffort.png"
+    },
+    {
+     "name": "Heartbound horde",
+     "icon": "heartboundhorde.png"
+    },
+    {
+     "name": "Power in numbers",
+     "icon": "powerinnumbers.png"
+    }
+   ]
+  },
+  "Explosives": {
+   "name": "Explosives",
+   "icon": "explosives.png",
+   "talents": [
+    {
+     "name": "High Velocity Charge",
+     "icon": "highvelocitycharge.png"
+    },
+    {
+     "name": "Phantom Bombs",
+     "icon": "phantombombs.png"
+    },
+    {
+     "name": "Auto Salvage",
+     "icon": "autosalvage.png"
+    },
+    {
+     "name": "Composite Armor",
+     "icon": "compositearmor.png"
+    },
+    {
+     "name": "Mana Blast",
+     "icon": "manablast.png"
+    },
+    {
+     "name": "Adrenaline Rush",
+     "icon": "adrenalinerush.png"
+    },
+    {
+     "name": "After Burn",
+     "icon": "afterburn.png"
+    },
+    {
+     "name": "Napalm",
+     "icon": "napalm.png"
+    }
+   ]
+  }
+ }
+}

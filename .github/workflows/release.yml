@@ -1,0 +1,69 @@
+name: Release
+
+# Push a version tag to publish a release, e.g.:
+#   git tag v1.0.0 && git push origin v1.0.0
+# The tag must match __version__ in src/ck_dps_solver/__init__.py, and CHANGELOG.md needs a "## [1.0.0]" section
+# (it becomes the release notes). The release gets the Windows app as a zip; GitHub adds the source code archives.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows-app:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Check the version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $code = (Select-String -Path src/ck_dps_solver/__init__.py -Pattern "__version__ = '(.+)'").Matches[0].Groups[1].Value
+          if ($code -ne $version) { throw "Tag $version doesn't match __version__ $code" }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Install
+        run: python -m pip install .[build]
+
+      - name: Tests
+        run: python -m unittest discover tests
+
+      - name: Build the app
+        run: pyinstaller --noconfirm packaging/ck-dps-solver.spec
+
+      - name: Self-test the app
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath "dist/CK DPS Solver/CK DPS Solver.exe" -ArgumentList "--self-test" -Wait -PassThru
+          Get-Content "$env:LOCALAPPDATA/ck-dps-solver/self_test.log"
+          if ($app.ExitCode -ne 0) { throw "Self-test failed (exit code $($app.ExitCode))" }
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path "dist/CK DPS Solver" -DestinationPath "CK-DPS-Solver-${{ steps.version.outputs.version }}-windows.zip"
+
+      - name: Release notes from the changelog
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern "^## \[$([regex]::Escape($version))\]").LineNumber
+          if (-not $start) { throw "CHANGELOG.md has no section for $version" }
+          $rest = $lines[$start..($lines.Count - 1)]
+          $end = ($rest | Select-String -Pattern "^## \[").LineNumber | Select-Object -First 1
+          $notes = if ($end) { $rest[0..($end - 2)] } else { $rest }
+          $notes | Set-Content release_notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" "CK-DPS-Solver-${{ steps.version.outputs.version }}-windows.zip" --title "CK DPS Solver ${{ steps.version.outputs.version }}" --notes-file release_notes.md
