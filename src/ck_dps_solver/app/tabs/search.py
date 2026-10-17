@@ -88,20 +88,11 @@ class SearchTab(QWidget):
 
         # Options
         options = QHBoxLayout()
-        output_help = ('Where the best loadouts are saved as a spreadsheet (CSV).\n'
-                       '{damage_type} is replaced by the damage type, e.g. outputs/melee_dps.csv.\n'
-                       'A relative path is inside your user folder (%LOCALAPPDATA%\\ck-dps-solver).')
-        output_label = QLabel('Output CSV')
-        output_label.setToolTip(output_help)
-        options.addWidget(output_label)
-        output = bind.line(store, 'output', output_help)
-        output.setMinimumWidth(420)
-        options.addWidget(output)
         options.addStretch()
         self.advanced_button = QPushButton('Advanced settings')
         self.advanced_button.setCheckable(True)
         self.advanced_button.setProperty('toggle', True)
-        self.advanced_button.setToolTip('Loadouts to keep, skipping dominated items')
+        self.advanced_button.setToolTip('Output CSV, loadouts to keep, skipping dominated items')
         self.advanced_button.toggled.connect(self.show_advanced)
         options.addWidget(self.advanced_button)
         layout.addLayout(options)
@@ -109,6 +100,16 @@ class SearchTab(QWidget):
         self.advanced = QWidget()
         advanced = QHBoxLayout(self.advanced)
         advanced.setContentsMargins(0, 0, 0, 0)
+        output_help = ('Where the best loadouts are saved as a spreadsheet (CSV).\n'
+                       '{damage_type} is replaced by the damage type, e.g. outputs/melee_dps.csv.\n'
+                       'A relative path is inside your user folder (%LOCALAPPDATA%\\ck-dps-solver).')
+        output_label = QLabel('Output CSV')
+        output_label.setToolTip(output_help)
+        advanced.addWidget(output_label)
+        output = bind.line(store, 'output', output_help)
+        output.setMinimumWidth(420)
+        advanced.addWidget(output)
+        advanced.addSpacing(16)
         advanced.addWidget(QLabel('Loadouts to keep (top N)'))
         advanced.addWidget(bind.spin(store, 'top_n', 1, 10_000_000, 1000, width=110))
         advanced.addSpacing(16)
