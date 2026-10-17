@@ -43,7 +43,7 @@ class ConfigStore(QObject):
         import copy
         from ck_dps_solver import defaults
         from ck_dps_solver.app.labels import DAMAGE_TYPES
-        c = copy.deepcopy({k: v for k, v in self.config.items() if k not in ('save_folder', 'show_names', 'theme', 'consumables_owned_only', 'permanent_health_foods')})
+        c = copy.deepcopy({k: v for k, v in self.config.items() if k not in ('save_folder', 'show_names', 'theme', 'consumables_owned_only', 'permanent_health_foods', 'stats_by_mode')})
         known = defaults.default_config()['settings']
         saved = c.get('settings', {})
         c['settings'] = {name: bool(saved.get(name, default)) if isinstance(default, bool) else float(saved.get(name, default))

@@ -19,7 +19,7 @@ def load_config():
         for key, value in saved.items():
             if isinstance(value, dict) and isinstance(config.get(key), dict):
                 config[key].update(value)
-            elif key in config or key in ('save_folder', 'show_names', 'theme', 'consumables_from_ticks', 'consumables_owned_only', 'permanent_health_foods'):
+            elif key in config or key in ('save_folder', 'show_names', 'theme', 'consumables_from_ticks', 'consumables_owned_only', 'permanent_health_foods', 'stats_by_mode'):
                 config[key] = value
     if config.get('theme') not in [theme.DYNAMIC] + list(theme.THEMES): # None saved yet (or a removed theme): follow the damage type
         config['theme'] = theme.DYNAMIC

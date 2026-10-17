@@ -1,11 +1,13 @@
 """Items tab: which items to search (every item or owned ones from save files), the progression limit, and the lantern,
 bag and pet always equipped."""
+import copy
 import os
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QComboBox, QFileDialog, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QPushButton, QRadioButton, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget)
 
+from ck_dps_solver import defaults
 from ck_dps_solver.catalogue import BAGS, LANTERNS, PETS
 from ck_dps_solver.model.progression import BIOME_NAMES, BIOMES, biomes_up_to, progression_from_save
 from ck_dps_solver.saves.save_files import DEFAULT_ROOT, list_saves, save_folders
@@ -46,6 +48,9 @@ def biomes_for(label):
 def _same(a, b):
     return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
+
+# Character stats each search mode keeps its own copy of (ItemsTab.mode_changed)
+MODE_STATS = ('skill_levels', 'perk_trees', 'settings.Permanent max health', 'permanent_health_foods')
 
 class ItemsTab(QWidget):
     def __init__(self, store, log):
@@ -204,6 +209,10 @@ class ItemsTab(QWidget):
         layout.addStretch() # Keeps the boxes at the top when the save section is hidden
 
         store.changed.connect(self.refresh)
+        self.using_save = bool(store.get('save_filter.enabled'))
+        store.changed.connect(self.mode_changed)
+        if not self.using_save: # Every item: the defaults, also when the app starts this way (e.g. after the defaults changed)
+            self.apply_default_stats()
         self.folder_box.setCurrentText(store.get('save_folder') or (self.folder_box.itemText(0) if self.folder_box.count() else ''))
         self.refresh('')
 
@@ -356,6 +365,34 @@ class ItemsTab(QWidget):
         self.load_status.setProperty('status', 'good' if good else 'bad')
         self.load_status.style().unpolish(self.load_status)
         self.load_status.style().polish(self.load_status)
+
+    def mode_changed(self, path):
+        """Character stats (skills, talents, permanent foods) follow the search mode. Every item: the defaults (level 100,
+        the damage type's best talents for the mana strategy, all permanent foods). Your own items: the selected
+        character's, read from its save (without a character selected, the ones you had there)."""
+        using = bool(self.store.get('save_filter.enabled'))
+        if path != 'save_filter.enabled' or using == self.using_save:
+            self.using_save = using # A preset or a reload: take it as it is
+            return
+        self.using_save = using
+        if not using:
+            self.store.set('stats_by_mode.owned', {key: copy.deepcopy(self.store.get(key)) for key in MODE_STATS})
+            self.apply_default_stats()
+        elif self.selected_paths(self.character_list, self.saves[0]):
+            self.load_save() # Your character's stats, from its save
+        else:
+            for key, value in (self.store.get('stats_by_mode.owned') or {}).items():
+                self.store.set(key, copy.deepcopy(value))
+
+    def apply_default_stats(self):
+        """Every item: default skills and talents, all permanent foods"""
+        self.store.set('skill_levels', dict(defaults.skill_levels))
+        self.store.set('perk_trees', defaults.perk_trees_for(self.store.get('damage_type'), bool(self.store.get('settings.Burst at full mana', True))))
+        foods = permanent_health_foods()
+        self.store.set('permanent_health_foods', sorted(code for code, _, _ in foods))
+        self.store.set('settings.Permanent max health', float(sum(value for _, _, value in foods)))
+        self.log('Every item: default skills and talents (level 100, the best talents for the damage type and mana strategy) '
+                 'and all permanent foods')
 
     def load_save(self):
         """Load button: the first selected character's skills and talents, progression and permanent max health"""
