@@ -132,12 +132,15 @@ class SearchTab(QWidget):
             button = QPushButton(text)
             button.clicked.connect(action)
             presets.addWidget(button)
+            if text == 'Load':
+                self.preset_load = button # Locked while searching: a preset can change the damage type
         presets.addStretch()
         # Earlier runs (this session): switch back without searching again
         self.history = [] # Newest first: {label, info, rows, upgrades}
         self.history_box = QComboBox()
         self.history_box.setMinimumWidth(320)
-        self.history_box.setToolTip(f'Your last {HISTORY_SIZE} searches; pick one to show its results again')
+        self.history_box.setToolTip(f'Your last {HISTORY_SIZE} searches; pick one to show its results again (and switch to its damage type)')
+        self.history_box.setPlaceholderText('Earlier searches...')
         self.history_box.currentIndexChanged.connect(self.show_history)
         self.history_box.hide()
         presets.addWidget(self.history_box)
@@ -204,6 +207,8 @@ class SearchTab(QWidget):
         self.upgrades.source.expand = True # Hover shows a cell's whole text (where to get, uses)
         self.hover_cache = {}
         store.changed.connect(lambda path: self.update_upgrades_tab() if path in ('', 'save_filter', 'save_filter.enabled') else None)
+        store.changed.connect(lambda path: self.damage_type_changed() if path in ('', 'damage_type') else None)
+        self.shown_damage_type = None # Damage type of the results on screen (None: nothing shown)
         self.update_upgrades_tab()
 
         self.details = LoadoutDetails() # The clicked loadout: DPS curve, character sheet, where stats come from
@@ -286,6 +291,7 @@ class SearchTab(QWidget):
             QMessageBox.warning(self, 'Invalid center', 'Center must be "x, z" or blank.')
             return
         self.store.save()
+        self.shown_damage_type = config['damage_type'] # Its results will show here; switching damage type is locked until it ends
         biomes = config.get('biomes')
         self.run_label = (f"{config['damage_type']}, {'owned items' if config['save_filter']['enabled'] else 'every item'}, "
                           f"{'up to ' + biomes[-1] if biomes else 'all biomes'}")
@@ -312,6 +318,34 @@ class SearchTab(QWidget):
         self.running = running
         self.run_button.setIcon(run_icon(stop=running))
         self.run_button.setToolTip('Stop the search (Esc)' if running else 'Run the search (Ctrl+R)')
+        locked = 'Stop the search first: its results are for the damage type it started with'
+        box = getattr(self.main_window, 'damage_type_box', None)
+        for widget, tip in ((box, 'The damage type to search'), (getattr(self, 'preset_load', None), ''),
+                            (getattr(self, 'history_box', None), self.history_box.toolTip() if hasattr(self, 'history_box') else '')):
+            if widget is not None:
+                widget.setEnabled(not running)
+                if running:
+                    widget.setProperty('tip_before_run', widget.toolTip())
+                    widget.setToolTip(locked)
+                elif widget.property('tip_before_run') is not None:
+                    widget.setToolTip(widget.property('tip_before_run'))
+
+    def damage_type_changed(self):
+        """Results show only for their damage type: switching to another clears them (the run stays in the history)"""
+        if self.running or self.shown_damage_type in (None, self.store.get('damage_type')):
+            return
+        self.shown_damage_type = None
+        self.loadouts.set_rows([])
+        self.upgrades.set_rows([])
+        self.all_rows, self.info = [], None
+        self.hover_cache = {}
+        self.details.clear()
+        self.details.unpin() # A pinned loadout of another damage type can't be compared
+        self.log_box.clear()
+        self.update_count()
+        self.history_box.blockSignals(True); self.history_box.setCurrentIndex(-1); self.history_box.blockSignals(False)
+        self.status.setText('Ready')
+        self.progress.setRange(0, 1); self.progress.setValue(0)
 
     def apply_theme(self):
         self.run_button.setIcon(run_icon(stop=self.running)) # Drawn in the theme's button text color
@@ -348,21 +382,27 @@ class SearchTab(QWidget):
         self.main_window.statusBar().showMessage(f"Saved {info['output']}", 8000)
         best = f"{self.all_rows[0][1][0]:,} DPS" if self.all_rows else 'no loadouts'
         self.history.insert(0, {'label': f"{datetime.datetime.now():%H:%M} {self.run_label}: {best}", 'info': info, 'rows': self.all_rows,
-                                'upgrades': list(self.upgrades.source.rows), 'status': self.status.text()})
+                                'upgrades': list(self.upgrades.source.rows), 'status': self.status.text(), 'damage_type': self.shown_damage_type,
+                                'log': self.log_box.toPlainText()})
         del self.history[HISTORY_SIZE:]
         self.history_box.blockSignals(True)
         self.history_box.clear()
         self.history_box.addItems([entry['label'] for entry in self.history])
         self.history_box.setCurrentIndex(0)
         self.history_box.blockSignals(False)
-        self.history_box.setVisible(len(self.history) > 1)
+        self.history_box.setVisible(bool(self.history))
 
     def show_history(self, index):
         """Show an earlier run's results again"""
         if not 0 <= index < len(self.history) or self.running:
             return
         entry = self.history[index]
+        if entry['damage_type'] != self.store.get('damage_type'):
+            self.store.set('damage_type', entry['damage_type']) # Its damage type (and theme) first; that clears the tables
+            self.history_box.blockSignals(True); self.history_box.setCurrentIndex(index); self.history_box.blockSignals(False)
+        self.shown_damage_type = entry['damage_type']
         self.info, self.all_rows = entry['info'], entry['rows']
+        self.log_box.setPlainText(entry.get('log', '')) # That run's log
         self.details.clear()
         self.show_rows()
         self.upgrades.set_rows(entry['upgrades'])
