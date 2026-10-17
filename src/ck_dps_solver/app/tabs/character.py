@@ -326,13 +326,14 @@ class CharacterTab(QWidget):
         self.store.set(f'skill_levels.{skill}', 0)
         self.set_points(skill, [0] * len(self.points(skill)))
 
-    def default_skill(self, skill):
+    def default_skill(self, skill, log=True):
         """A skill's level and talents from defaults.py (skill_levels, and the damage type's perk_trees_for)"""
         level = defaults.skill_levels.get(skill, 0)
         self.store.set(f'skill_levels.{skill}', level)
         tree = defaults.perk_trees_for(self.store.get('damage_type')).get(skill, [0] * 8)
         self.set_points(skill, talents.fit_to_level(skill, level, tree))
-        self.log(f'{skill}: level and talents set to the defaults')
+        if log:
+            self.log(f'{skill}: level and talents set to the defaults')
 
     def damage_type_changed(self, path):
         """Talents still at the old damage type's defaults follow to the new one's (defaults.PERK_TREES_FOR); talents you
@@ -352,8 +353,10 @@ class CharacterTab(QWidget):
             self.log(f"{', '.join(moved)}: talents set to the {new} defaults")
 
     def defaults(self):
+        """Every skill to its default level and the damage type's best talents"""
         for skill in self.skills:
-            self.default_skill(skill)
+            self.default_skill(skill, log=False)
+        self.log(f"All skills set to the defaults: level 100 and the best talents for {self.store.get('damage_type')}")
 
     # ------------------------------------------------------------ show
 

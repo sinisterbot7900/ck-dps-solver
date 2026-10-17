@@ -5,7 +5,7 @@ import sys
 
 from PySide6.QtCore import QEasingCurve, QParallelAnimationGroup, QPoint, QPropertyAnimation, QSettings, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel, QMainWindow, QTabWidget,
+from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTabWidget,
                                QVBoxLayout, QWidget)
 
 from ck_dps_solver import __version__, paths
@@ -58,6 +58,13 @@ class MainWindow(QMainWindow):
         self.slide_from = None
         self.tabs.tabBar().tabBarClicked.connect(self.before_tab_change) # Before the switch: snapshot the page being left
         self.tabs.currentChanged.connect(self.slide_to_tab)
+        # Character tab: every skill to the defaults in one click (top right, level with the tab buttons)
+        self.all_defaults = QPushButton('Defaults for all skills')
+        self.all_defaults.setToolTip('Every skill to level 100 with the best talents for the damage type')
+        self.all_defaults.clicked.connect(self.character.defaults)
+        self.tabs.setCornerWidget(self.all_defaults, Qt.TopRightCorner)
+        self.tabs.currentChanged.connect(lambda index: self.all_defaults.setVisible(self.tabs.widget(index) is self.character))
+        self.all_defaults.setVisible(self.tabs.currentWidget() is self.character)
         body = QWidget()
         body_layout = QVBoxLayout(body)
         body_layout.setContentsMargins(10, 10, 10, 10)
