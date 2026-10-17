@@ -283,11 +283,17 @@ def run_search(config, progress=None, should_stop=None, log=print):
     worthless = worthless_attributes(damage_type, perks, list(weapons) + [i for items in slots.values() for i in items])
     unused = unused_attributes(damage_type) + worthless
     configured_pet = next((item for item in fixed if item.item_category == 'Pet'), None)
+    pet_versions = [] # Every item: the configured pet's talent versions
     all_pets = list(pets or []) # Before the configured pet narrows them (for Best)
     if not config.get('search_pets'):
-        # Owned items: your own copies of the configured pet (with their talents); otherwise the configured entry
-        own = [p for p in pets if configured_pet is not None and p.name == configured_pet.name] if config['save_filter']['enabled'] else []
-        pets = own or None
+        # Owned items: your own copies of the configured pet (with their talents). Every item: the configured pet with
+        # its learned talents, as when trying every pet (one version per useful talent, all points in it; the search
+        # keeps the best)
+        if config['save_filter']['enabled']:
+            pets = [p for p in pets if configured_pet is not None and p.name == configured_pet.name] or None
+        else:
+            pet_versions = [p for p in pets or [] if configured_pet is not None and p.name.split(' (')[0] == configured_pet.name]
+            pets = None # Picked like Best (below): a quick search, then each version on its top loadouts
     # Always-equipped items to search: every lantern / bag (or none) when asked for, and the pets
     options = {}
     for category, key in (('Lantern', 'search_lanterns'), ('Bag', 'search_bags')):
@@ -306,6 +312,10 @@ def run_search(config, progress=None, should_stop=None, log=print):
         if prune and (category != 'Pet' or not config['save_filter']['enabled']):
             choices = [choices[i] for i in undominated(choices, relevant_groups(settings, damage_type, worthless), exact=exact, unused=unused)]
         best_choices[category] = choices or [empty_item(category)]
+    if 'Pet' not in best_choices and not config.get('search_pets') and len(pet_versions) > 1:
+        best_choices['Pet'] = pet_versions # The configured pet's talent versions: keep the best one
+    elif len(pet_versions) == 1 and 'Pet' not in best_choices:
+        options['Pet'] = pet_versions
     if 'Pet' in best_choices: # Best pet instead of the configured one
         options.pop('Pet', None)
         pets = None
