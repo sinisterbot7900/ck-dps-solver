@@ -149,6 +149,17 @@ def color(name):
     return QColor(_current[name])
 
 
+def progress_color():
+    """The progress bar's fill (some themes give it its own color)"""
+    return QColor(_current.get('progress', _current['accent']))
+
+
+def readable_on(background):
+    """Black or white, whichever reads better on a color"""
+    luminance = 0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()
+    return QColor('#000000') if luminance > 150 else QColor('#ffffff')
+
+
 def _check_image(color):
     """A checkmark (SVG file) in a color, for checked checkboxes (styled indicators don't draw Qt's own)"""
     folder = os.path.join(tempfile.gettempdir(), 'ck-dps-solver-theme')

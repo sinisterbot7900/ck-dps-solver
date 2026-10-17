@@ -44,7 +44,8 @@ window. Settings, presets and results are kept in `%LOCALAPPDATA%\ck-dps-solver`
 3. **Settings, Character and Consumables tabs**: fight conditions (boss fight, fight length, set conditions), skill
    levels and talents, and the food and potions you use. The default talents are the best legal build for each damage
    type (level 100, assuming a full magic barrier); talents left at the defaults follow the damage type you pick.
-4. **Run** on the Search tab. Click a loadout for its breakdown; the Upgrades tab lists what to get next.
+4. **Run** with the ▶ button at the top of the window (Ctrl+R; it turns into a stop button while searching, or press Esc).
+   Click a loadout on the Search tab for its breakdown; the Upgrades tab lists what to get next.
 
 The game only writes its save files now and then: for up-to-date items, quit to the menu before clicking Load.
 

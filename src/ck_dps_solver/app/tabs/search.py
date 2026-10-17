@@ -1,27 +1,78 @@
-"""Search tab: options, Run/Stop with progress, results tables, the log, and (below the results) the clicked
-loadout's details."""
+"""Search tab: options, presets, results tables, the log, and (below the results) the clicked loadout's details. The run
+button and progress bar are built here but shown in the window's header (run_bar)."""
 import copy
 import datetime
 import os
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QPointF, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QIcon, QKeySequence, QPainter, QPixmap, QPolygonF, QShortcut
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QMessageBox, QPlainTextEdit,
                                QProgressBar, QPushButton, QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
 from ck_dps_solver import defaults
-
-from ck_dps_solver.engine import solver
-
-from ck_dps_solver.app import labels, state
+from ck_dps_solver.app import labels, state, theme
 from ck_dps_solver.app.widgets import bind
 from ck_dps_solver.app.widgets.collapse import Collapsible
 from ck_dps_solver.app.widgets.details import LoadoutDetails
 from ck_dps_solver.app.widgets.item_tooltip import item_tooltip
 from ck_dps_solver.app.widgets.results import ResultsTable
 from ck_dps_solver.app.worker import start_search
+from ck_dps_solver.engine import solver
 
 
 HISTORY_SIZE = 5 # Earlier runs kept for this session
+
+
+RUN_BUTTON_SIZE = 34 # Run button (square) and the run bar's height
+RUN_ICON_SIZE = 16
+RUN_BAR_WIDTH = 460
+
+
+def run_icon(stop=False):
+    """A right-pointing run arrow, or a stop square, in the accent button's text color"""
+    size = RUN_ICON_SIZE * 2 # Drawn at twice the size: sharp on high-DPI screens
+    pixmap = QPixmap(size, size)
+    pixmap.setDevicePixelRatio(2)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(Qt.NoPen)
+    painter.setBrush(theme.color('accent_text'))
+    s = RUN_ICON_SIZE
+    if stop:
+        painter.drawRoundedRect(QRectF(s * 0.2, s * 0.2, s * 0.6, s * 0.6), 2, 2)
+    else:
+        painter.drawPolygon(QPolygonF([QPointF(s * 0.25, s * 0.12), QPointF(s * 0.88, s * 0.5), QPointF(s * 0.25, s * 0.88)]))
+    painter.end()
+    return QIcon(pixmap)
+
+
+class RunBar(QProgressBar):
+    """The progress bar with the search's status written on it: the text over the filled part takes a color that reads
+    on the fill, the rest the normal text color"""
+    def __init__(self):
+        super().__init__()
+        self.setTextVisible(False) # Drawn below
+        self.label = ''
+
+    def setText(self, text):
+        self.label = text
+        self.update()
+
+    def text(self):
+        return self.label
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        span = self.maximum() - self.minimum()
+        filled = 0 if span <= 0 else round(self.width() * (self.value() - self.minimum()) / span) # Busy: no fill
+        painter = QPainter(self)
+        for clip, color in ((QRect(0, 0, filled, self.height()), theme.readable_on(theme.progress_color())),
+                            (QRect(filled, 0, self.width() - filled, self.height()), theme.color('text'))):
+            painter.setClipRect(clip)
+            painter.setPen(color)
+            painter.drawText(self.rect(), Qt.AlignCenter, self.label)
+        painter.end()
 
 
 class SearchTab(QWidget):
@@ -79,28 +130,6 @@ class SearchTab(QWidget):
             button.clicked.connect(action)
             presets.addWidget(button)
         presets.addStretch()
-        layout.addLayout(presets)
-
-        # Run row
-        run = QHBoxLayout()
-        self.run_button = QPushButton('Run')
-        self.run_button.setProperty('accent', True)
-        self.run_button.setShortcut('Ctrl+R')
-        self.run_button.clicked.connect(self.run)
-        self.stop_button = QPushButton('Stop')
-        self.stop_button.setEnabled(False)
-        self.stop_button.setShortcut('Esc')
-        self.stop_button.clicked.connect(self.stop)
-        open_csv = QPushButton('Open CSV')
-        open_csv.clicked.connect(self.open_csv)
-        self.progress = QProgressBar()
-        self.progress.setTextVisible(False)
-        self.status = QLabel('Ready')
-        self.status.setMinimumWidth(320)
-        for widget in (self.run_button, self.stop_button, open_csv):
-            run.addWidget(widget)
-        run.addWidget(self.progress, 1)
-        run.addWidget(self.status)
         # Earlier runs (this session): switch back without searching again
         self.history = [] # Newest first: {label, info, rows, upgrades}
         self.history_box = QComboBox()
@@ -108,16 +137,41 @@ class SearchTab(QWidget):
         self.history_box.setToolTip(f'Your last {HISTORY_SIZE} searches; pick one to show its results again')
         self.history_box.currentIndexChanged.connect(self.show_history)
         self.history_box.hide()
-        run.addWidget(self.history_box)
-        layout.addLayout(run)
+        presets.addWidget(self.history_box)
+        layout.addLayout(presets)
+
+        # Run bar (shown in the window's header, on every tab): one button that runs, and stops while running, and
+        # the progress bar, which also shows the status
+        self.running = False
+        self.run_bar = QWidget()
+        run = QHBoxLayout(self.run_bar)
+        run.setContentsMargins(0, 0, 0, 0)
+        run.setSpacing(8)
+        self.run_button = QPushButton()
+        self.run_button.setProperty('accent', True)
+        self.run_button.setFixedSize(RUN_BUTTON_SIZE, RUN_BUTTON_SIZE)
+        self.run_button.setIconSize(QSize(RUN_ICON_SIZE, RUN_ICON_SIZE))
+        self.run_button.clicked.connect(lambda: self.stop() if self.running else self.run())
+        QShortcut(QKeySequence('Ctrl+R'), window, activated=lambda: None if self.running else self.run())
+        QShortcut(QKeySequence('Esc'), window, activated=lambda: self.stop() if self.running else None)
+        self.progress = RunBar()
+        self.progress.setFixedSize(RUN_BAR_WIDTH, RUN_BUTTON_SIZE)
+        self.status = self.progress # The status is written on the bar
+        self.status.setText('Ready')
+        run.addWidget(self.run_button)
+        run.addWidget(self.progress)
+        self.set_running(False)
 
         # Filter (in the results tab bar's top right corner, beside the Loadouts / Upgrades tabs)
         corner = QWidget()
         filters = QHBoxLayout(corner)
         filters.setContentsMargins(0, 0, 0, 4)
-        filters.addWidget(QLabel('Filter loadouts'))
+        open_csv = QPushButton('Open CSV')
+        open_csv.setToolTip('Open the search\'s loadouts file')
+        open_csv.clicked.connect(self.open_csv)
+        filters.addWidget(open_csv)
         self.filter_box = QLineEdit()
-        self.filter_box.setPlaceholderText('e.g. scarab titan')
+        self.filter_box.setPlaceholderText('Filter loadouts, e.g. scarab titan')
         self.filter_box.setToolTip('Only loadouts with all these words in some item name')
         self.filter_box.setFixedWidth(260)
         filters.addWidget(self.filter_box)
@@ -126,6 +180,8 @@ class SearchTab(QWidget):
         filters.addWidget(self.per_weapon)
         self.count = QLabel('')
         self.count.setProperty('muted', True)
+        self.count.ensurePolished() # The theme's font, so the width below fits
+        self.count.setMinimumWidth(self.count.fontMetrics().horizontalAdvance('100,000 of 100,000 kept loadouts') + 8) # Stays put when it fills in
         filters.addWidget(self.count)
 
         # Results, details, log: resizable
@@ -237,8 +293,7 @@ class SearchTab(QWidget):
         self.details.clear()
         self.update_count()
         self.log_box.clear()
-        self.run_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
+        self.set_running(True)
         self.progress.setRange(0, 0) # Busy until the first stage starts
         self.status.setText('Preparing items...')
         self.thread, self.worker = start_search(config)
@@ -248,6 +303,15 @@ class SearchTab(QWidget):
         self.worker.finished.connect(self.on_finished)
         self.worker.failed.connect(self.on_failed)
         self.thread.start()
+
+    def set_running(self, running):
+        """The run button: a run arrow, or a stop square while a search runs"""
+        self.running = running
+        self.run_button.setIcon(run_icon(stop=running))
+        self.run_button.setToolTip('Stop the search (Esc)' if running else 'Run the search (Ctrl+R)')
+
+    def apply_theme(self):
+        self.run_button.setIcon(run_icon(stop=self.running)) # Drawn in the theme's button text color
 
     def stop(self):
         if self.worker is not None:
@@ -265,8 +329,7 @@ class SearchTab(QWidget):
         self.status.setText(f'{done:,} / {total:,}{eta}')
 
     def on_finished(self, results, info):
-        self.run_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        self.set_running(False)
         if not info['stopped']:
             self.progress.setValue(self.progress.maximum())
         self.status.setText(f"{'Stopped (best found so far)' if info['stopped'] else 'Done'} in {info['seconds']:.0f}s")
@@ -293,7 +356,7 @@ class SearchTab(QWidget):
 
     def show_history(self, index):
         """Show an earlier run's results again"""
-        if not 0 <= index < len(self.history) or self.run_button.isEnabled() is False:
+        if not 0 <= index < len(self.history) or self.running:
             return
         entry = self.history[index]
         self.info, self.all_rows = entry['info'], entry['rows']
@@ -313,8 +376,7 @@ class SearchTab(QWidget):
         return actions
 
     def on_failed(self, message):
-        self.run_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        self.set_running(False)
         self.progress.setRange(0, 1)
         self.status.setText('Error (see log)')
         self.log(message)

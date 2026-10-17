@@ -5,7 +5,7 @@ import sys
 
 from PySide6.QtCore import QEasingCurve, QParallelAnimationGroup, QPoint, QPropertyAnimation, QSettings, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTabWidget,
+from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTabWidget,
                                QVBoxLayout, QWidget)
 
 from ck_dps_solver import __version__, paths
@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.tabs.setDocumentMode(True)
         self.pages = {}
         self.search = SearchTab(self.store, self)
+        self.header_center.addWidget(self.search.run_bar) # In the header: visible on every tab
         self.items = ItemsTab(self.store, self.search.log)
         self.settings_tab = SettingsTab(self.store)
         self.character = CharacterTab(self.store, self.search.log)
@@ -82,20 +83,26 @@ class MainWindow(QMainWindow):
         self.store.changed.connect(lambda path: self.fade_to(self.wanted_theme()) if path in THEME_PATHS else None)
 
     def build_header(self):
+        """Title on the left, the run bar in the middle (placed once the Search tab exists), damage type on the right"""
         header = QFrame()
         header.setObjectName('Header')
-        row = QHBoxLayout(header)
+        row = QGridLayout(header)
         row.setContentsMargins(16, 10, 16, 10)
         title = QLabel('Core Keeper DPS Solver')
         title.setObjectName('Title')
-        row.addWidget(title)
-        row.addStretch()
+        row.addWidget(title, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        self.header_center = QHBoxLayout()
+        row.addLayout(self.header_center, 0, 1, Qt.AlignCenter)
+        right = QHBoxLayout()
         label = QLabel('Damage type')
         label.setObjectName('Subtitle')
-        row.addWidget(label)
+        right.addWidget(label)
         self.damage_type_box = bind.combo(self.store, 'damage_type', labels.DAMAGE_TYPES)
         self.damage_type_box.setMinimumWidth(140)
-        row.addWidget(self.damage_type_box)
+        right.addWidget(self.damage_type_box)
+        row.addLayout(right, 0, 2, Qt.AlignRight | Qt.AlignVCenter)
+        row.setColumnStretch(0, 1) # Equal sides: the run bar stays in the middle of the window
+        row.setColumnStretch(2, 1)
         return header
 
     def wanted_theme(self):
@@ -109,6 +116,7 @@ class MainWindow(QMainWindow):
         theme.apply(self.app, name)
         self.applied_theme = name
         self.search.details.apply_theme() # The chart draws itself, so it isn't styled by the stylesheet
+        self.search.apply_theme() # The run button's icon
         self.consumables.apply_theme()
         self.character.apply_theme()
         self.settings_tab.refresh_foods() # Dimmed later-biome foods use the theme's muted color
