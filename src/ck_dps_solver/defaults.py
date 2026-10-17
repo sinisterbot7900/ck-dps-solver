@@ -41,7 +41,7 @@ perk_trees = {
     'Gardening':  [5, 5, 0, 5, 5, 0, 0, 5], # Grateful gardener, Eat your vegetables!, Thorny weapons, Thorny skin, Potent poison
     'Fishing':    [5, 5, 0, 0, 5, 0, 5, 5], # Improved bait, Fisherman's luck, Steady feet, Well-trained aim, Power of Omega-3!
     'Cooking':    [5, 5, 5, 5, 0, 5, 0, 0], # Utilizing every nutrient, Not so picky, Healthy diet, Fast food, The smell of food
-    'Magic':      [5, 5, 5, 1, 0, 5, 0, 4], # True sight, Mana channeling, Arcane frenzy, The best offense 1, Arcane transfusion, Mana recharge 4
+    'Magic':      [5, 5, 5, 4, 1, 5, 0, 0], # True sight, Mana channeling, Arcane frenzy, The best offense 4, Mental defense 1, Arcane transfusion
     'Summoning':  [5, 5, 5, 5, 0, 2, 3, 0], # Efficient binding, Ferocious creatures, Critical command, Trickle down arcana, Group effort 2, Heartbound horde 3
     'Explosives': [5, 0, 5, 0, 5, 0, 5, 5], # High Velocity Charge, Auto Salvage, Mana Blast, After Burn, Napalm
 }
@@ -52,13 +52,17 @@ PERK_TREES_FOR = {
     # hit at range too)
     'Range': {'Summoning': [5, 0, 5, 0, 5, 0, 5, 5]}, # Efficient binding, Critical command, Tough gang, Heartbound horde, Power in numbers
     'Magic': {'Summoning': [5, 0, 5, 0, 5, 0, 5, 5]},
-    # The scepter's magic damage: The best offense over Mana recharge (+0.8%)
-    'Summoning': {'Magic': [5, 5, 5, 4, 1, 5, 0, 0]}, # True sight, Mana channeling, Arcane frenzy, The best offense 4, Mental defense 1, Arcane transfusion
+    # The scepter's magic damage: all in The best offense
+    'Summoning': {'Magic': [5, 5, 5, 5, 0, 5, 0, 0]}, # True sight, Mana channeling, Arcane frenzy, The best offense, Arcane transfusion
 }
 
 
 # With "Burst at full mana" off (attacking whenever there's mana), the trees that do better another way, per damage type
-PERK_TREES_WITHOUT_BURST = {}
+PERK_TREES_WITHOUT_BURST = {
+    # Attacking whenever there's mana keeps regeneration halved, so Mana recharge (regeneration while casting) pays
+    'Magic': {'Magic': [5, 5, 5, 1, 0, 5, 0, 4]}, # True sight, Mana channeling, Arcane frenzy, The best offense 1, Arcane transfusion, Mana recharge 4
+    'Summoning': {'Magic': [5, 5, 5, 4, 1, 5, 0, 0]}, # True sight, Mana channeling, Arcane frenzy, The best offense 4, Mental defense 1, Arcane transfusion
+}
 
 
 def perk_trees_for(damage_type, burst=True):
