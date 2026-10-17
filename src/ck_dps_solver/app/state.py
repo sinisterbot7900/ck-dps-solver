@@ -4,6 +4,7 @@ import json
 import os
 
 from ck_dps_solver import defaults, paths
+from ck_dps_solver.app import theme
 
 CONFIG_PATH = paths.user_file('gui_config.json')
 PRESETS_PATH = paths.user_file('presets.json')
@@ -20,6 +21,8 @@ def load_config():
                 config[key].update(value)
             elif key in config or key in ('save_folder', 'show_names', 'theme', 'consumables_from_ticks', 'consumables_owned_only', 'permanent_health_foods'):
                 config[key] = value
+    if config.get('theme') not in [theme.DYNAMIC] + list(theme.THEMES): # None saved yet (or a removed theme): follow the damage type
+        config['theme'] = theme.DYNAMIC
     return config
 
 
