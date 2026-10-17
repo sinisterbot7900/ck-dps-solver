@@ -39,6 +39,9 @@ already been checked in game are listed at the end, so you don't need to retest 
   Test: how quickly does the barrier refill in a real fight, and does a partly full barrier still count?
 - **Mana.** Uses the wiki's model: 100 max mana, 10 mana per second, halved for 1 second after each attack.
   Test: time how long a staff can attack nonstop before running out of mana.
+- **Waiting for mana.** "Burst at full mana" assumes regeneration returns to the full rate 1 second after your last
+  attack, and that Mana recharge (regeneration while casting) doesn't apply while you wait.
+  Test: run out of mana, stop attacking, and time the refill to full; then compare with refilling while attacking.
 
 ## Combat settings and buffs
 

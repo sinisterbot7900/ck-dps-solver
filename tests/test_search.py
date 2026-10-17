@@ -64,3 +64,18 @@ class SummonerKits(unittest.TestCase):
         self.assertEqual((later.scepter_min_damage, later.scepter_max_damage, later.attributes),
                          (fresh.scepter_min_damage, fresh.scepter_max_damage, fresh.attributes))
         self.assertEqual((later.min_damage, later.max_damage), (fresh.min_damage, fresh.max_damage))
+
+
+class Mana(unittest.TestCase):
+    def test_bursting_at_full_mana_never_loses_to_spending_as_it_comes(self):
+        # Waiting to refill only happens when it pays (never at the end of a fight with no time to spend it)
+        from ck_dps_solver.catalogue import WEAPONS
+        config = defaults.default_config('Magic')
+        for fight in (15.0, 60.0, 180.0):
+            for weapon in [w for w in WEAPONS.values() if w.damage_type == 'Magic' and w.mana_cost > 0]:
+                dps = {}
+                for burst in (False, True):
+                    settings = dict(config['settings'], **{'Burst at full mana': burst, 'Fight length': fight})
+                    kwargs = dict(skill_levels=config['skill_levels'], perks=config['perk_trees'], food_effects={}, potion_effects={}, settings=settings)
+                    dps[burst] = solver.loadout_dps([weapon], kwargs)
+                self.assertGreaterEqual(dps[True], dps[False], (weapon.name, fight))

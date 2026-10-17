@@ -167,6 +167,7 @@ class Character():
             'Recently mined': True,     # Carapace set: damage after mining a wall
             'Vs boss': True,            # Target is a boss: damage against bosses applies
             'Adjacent to water': True,  # Magic: standing next to water (Swamp Mage set, Lily Pad items)
+            'Burst at full mana': True, # Magic: after running out, wait for mana to refill, then burst (off: attack whenever there's mana)
             'Full barrier': True,       # Magic: your magic barrier is full (not worn down by hits), for barrier-based damage and mana
             'Fight length': 60,         # Seconds of continuous attacking, starting at full mana and with unpoisoned targets (a number, not on/off)
             'Permanent max health': 590, # Max health from permanent foods eaten (all ten: 590; read from the save when a character is loaded)

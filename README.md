@@ -82,8 +82,10 @@ Staffs, scepters and beam staffs hit at range, so range talents and range attack
 momentum, Weakness detection...), but not physical range damage (Range skill, Pheromoth, fishing). The Zealot's
 Scimitar hits in melee and uses the melee talents the same way. Mana follows the wiki: 100 max mana plus items,
 10 mana per second plus items, halved for 1 second after each attack. When a weapon spends mana faster than you
-regenerate it, you attack at full speed until mana runs out, then only as fast as regeneration allows, so DPS depends
-on "Fight length". Fully charged and the Mage Mid set count for your average remaining mana. Arcane frenzy
+regenerate it, you attack at full speed until mana runs out; after that, with "Burst at full mana" (on by default)
+you wait for mana to refill, when it regenerates at the full rate, and burst again (waiting only when it pays, and not
+at the end of the fight). Off: you keep attacking as fast as regeneration allows. Either way DPS depends on "Fight
+length". Fully charged and the Mage Mid set count for your average remaining mana. Arcane frenzy
 (6 seconds) and the Soaring set (assumed 3 seconds) are buffs on critical hits.
 
 ### Summoning

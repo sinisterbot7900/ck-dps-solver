@@ -32,5 +32,8 @@ SETTING_HELP = {
     'Vs boss': 'Target is a boss: all damage against bosses (Golem set, Strength of the Ancients, food...)',
     'Adjacent to water': 'Magic: Swamp Mage set',
     'Full barrier': 'Magic: barrier counts for The best offense, Mage Low set, Arcane transfusion and the Warped set',
+    'Burst at full mana': ('Magic and scepters, once mana runs out. On: wait for mana to refill, then attack at full speed until it runs '
+                           'out again (mana regenerates at the full rate while you wait). Off: attack whenever there is mana for it '
+                           '(regeneration stays halved while you keep attacking)'),
     'Fight length': 'Seconds of nonstop attacking from full mana and unpoisoned targets: magic mana runs out, poison takes time to land',
 }

@@ -64,7 +64,7 @@ def check_engine(samples, seed=0):
     from ck_dps_solver.engine.solver import catalogue_search_items, consumable_effects
     rng = random.Random(seed)
     toggles = ['Max health', 'Standing still', 'Range stacks', 'Not hit', 'Kill stacks', 'Recently dodged', 'Burning', 'Well fed', 'Low health', 'Recently mined', 'Vs boss',
-               'Adjacent to water', 'Full barrier', 'Druidra soul', 'Cursed target']
+               'Adjacent to water', 'Full barrier', 'Druidra soul', 'Cursed target', 'Burst at full mana']
     problems, checked = [], 0
     for trial in range(15):
         damage_type = ['Range', 'Melee', 'Magic', 'Summoning', 'Explosives'][trial % 5]

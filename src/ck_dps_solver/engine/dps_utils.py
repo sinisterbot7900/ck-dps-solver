@@ -58,11 +58,11 @@ PARAMS = ['min_damage', 'max_damage', 'attacks_per_second', 'is_range', 'well_tr
           'fast_and_furious', 'standing_still', 'burning', 'vs_boss',
           'is_magic', 'mana_cost', 'mana_channeling', 'arcane_frenzy', 'mental_defense', 'fight_length', 'near_water', 'full_barrier', 'optimistic',
           'is_summon', 'heartbound_horde', 'aura_damage', 'scepter_min', 'scepter_max', 'scepter_aps', 'scepter_mana', 'group_effort', 'tough_gang',
-          'power_in_numbers', 'cursed', 'is_explosive', 'explosive_damage']
+          'power_in_numbers', 'cursed', 'is_explosive', 'explosive_damage', 'burst_mana']
 (P_MIN, P_MAX, P_APS, P_IS_RANGE, P_AIM, P_MINER, P_WEAKNESS, P_FAST_AND_FURIOUS, P_STANDING_STILL, P_BURNING, P_VS_BOSS,
  P_IS_MAGIC, P_MANA_COST, P_CHANNELING, P_FRENZY, P_MENTAL_DEFENSE, P_FIGHT_LENGTH, P_NEAR_WATER, P_FULL_BARRIER, P_OPTIMISTIC,
  P_IS_SUMMON, P_HEARTBOUND, P_AURA, P_S_MIN, P_S_MAX, P_S_APS, P_S_MANA, P_GROUP_EFFORT, P_TOUGH_GANG, P_POWER_IN_NUMBERS, P_CURSED,
- P_IS_EXPLOSIVE, P_EXPLOSIVE) = range(len(PARAMS))
+ P_IS_EXPLOSIVE, P_EXPLOSIVE, P_BURST_MANA) = range(len(PARAMS))
 
 ARCANE_FRENZY_SECONDS = 6 # Checked by the user
 POISON_SECONDS = 15 # Checked by the user; reapplying resets it
@@ -89,7 +89,8 @@ def params(weapon, perks, settings, optimistic=False):
                      getattr(weapon, 'scepter_min_damage', 0), getattr(weapon, 'scepter_max_damage', 0), getattr(weapon, 'scepter_attacks_per_second', 0),
                      getattr(weapon, 'scepter_mana_cost', 0), perks['Summoning']['Group effort'], perks['Summoning']['Tough gang'],
                      perks['Summoning']['Power in numbers'], 1.0 if settings['Cursed target'] and getattr(weapon, 'curses', False) else 0.0,
-                     1.0 if weapon.damage_type=='Explosives' else 0.0, weapon.explosive_damage], dtype=np.float64)
+                     1.0 if weapon.damage_type=='Explosives' else 0.0, weapon.explosive_damage,
+                     1.0 if settings.get('Burst at full mana', True) else 0.0], dtype=np.float64)
 
 
 def formula_set_counts(set_counts):
@@ -176,8 +177,47 @@ def weapon_dps(e, counts, p):
         if spend > regen:
             fight = p[P_FIGHT_LENGTH]
             burst_seconds = max_mana / (spend - regen) # Full speed until mana runs out
+            # Waiting (no attacks): regeneration at the full rate, after the moment it stays halved after the last attack
+            idle_regen = e[MANA_REGEN] + barrier * e[BARRIER_AS_MANA]
             if fight <= burst_seconds:
                 mana_fraction = 1 - fight / (2 * burst_seconds)
+            elif p[P_BURST_MANA] > 0 and idle_regen > 0:
+                # "Burst at full mana": attack until mana runs out, wait for it to refill, burst again
+                if p[P_OPTIMISTIC] > 0:
+                    # Bound: never more mana than max mana plus full-rate regeneration over the whole fight
+                    attack_fraction = min(1.0, (max_mana + idle_regen * fight) / (spend * fight))
+                else:
+                    # After the first burst (from full mana): wait to refill, burst to empty, again. Waiting only pays if a
+                    # cycle attacks longer than casting whenever there's mana would; else play as "spend as it comes".
+                    # The last cycle waits only as long as there's time left to spend what it gains.
+                    delay = max(1 - e[MANA_REGEN_DELAY], 0.0) # Regeneration stays halved this long after the last attack
+                    halved_regen = 0.5 * e[MANA_REGEN] + barrier * e[BARRIER_AS_MANA]
+                    drain = spend - regen # Mana per second while bursting
+                    if max_mana <= halved_regen * delay:
+                        refill = max_mana / halved_regen
+                    else:
+                        refill = delay + (max_mana - halved_regen * delay) / idle_regen
+                    cycle = refill + burst_seconds
+                    if burst_seconds / cycle <= regen / spend:
+                        burst_attacks = attacks_per_second * burst_seconds # Waiting doesn't pay: spend as it comes
+                        sustained_attacks = attacks_per_second * (regen / spend) * (fight - burst_seconds)
+                        attack_fraction = (burst_attacks + sustained_attacks) / (attacks_per_second * fight)
+                        mana_fraction = burst_attacks * 0.5 / (burst_attacks + sustained_attacks)
+                    else:
+                        cycles = math.floor((fight - burst_seconds) / cycle)
+                        left = fight - burst_seconds - cycles * cycle # The last, shorter cycle: wait w, then burst what it gained
+                        wait = left / (1 + halved_regen / drain)
+                        if wait > delay:
+                            wait = (left - (halved_regen - idle_regen) * delay / drain) / (1 + idle_regen / drain)
+                        gained = halved_regen * wait if wait <= delay else halved_regen * delay + idle_regen * (wait - delay)
+                        last = left - wait
+                        last_mana = gained / (2 * max_mana) # Average mana during the last burst (share of max)
+                        if last < left * regen / spend: # Too little time left to wait: keep casting instead
+                            last, last_mana = left * regen / spend, 0.0
+                        attacking = (1 + cycles) * burst_seconds + last
+                        attack_fraction = attacking / fight
+                        # Bursts run from full mana to empty
+                        mana_fraction = ((1 + cycles) * burst_seconds * 0.5 + last * last_mana) / attacking
             else:
                 burst_attacks = attacks_per_second * burst_seconds
                 sustained_attacks = attacks_per_second * (regen / spend) * (fight - burst_seconds)
