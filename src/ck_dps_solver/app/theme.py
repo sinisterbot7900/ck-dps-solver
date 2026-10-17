@@ -111,7 +111,7 @@ THEMES = {
         'primary': '#ff8a35', 'primary_hover': '#ffa15c', 'primary_text': '#1a0f06',
         'accent': '#ffd23f', 'accent_hover': '#ffdd6b', 'accent_text': '#1a1405',
         'selection': '#7a3a10', 'success': '#4ade80', 'error': '#f87171',
-        'chart_moment': '#ffffff', 'chart_average': '#ffd23f', 'chart_grid': '#4a2610',
+        'chart_moment': '#ffffff', 'chart_average': '#ffd23f', 'chart_grid': '#4a2610', 'special': '#ffffff',
     },
     'Range': { # Forest greens; brown only for the Run button and the line under the header
         'window': '#0f1a12', 'panel': '#15241a', 'panel_alt': '#1a2c20', 'header': '#0b1a0f', 'header_text': '#ffffff', 'tab': '#1f3a26',
@@ -119,7 +119,7 @@ THEMES = {
         'primary': '#3a8a50', 'primary_hover': '#47a05f', 'primary_text': '#ffffff',
         'accent': '#8b5a2b', 'accent_hover': '#a06a35', 'accent_text': '#fff3e6', 'progress': '#4f9e63',
         'selection': '#24452e', 'success': '#6fbf7f', 'error': '#f87171',
-        'chart_moment': '#ffffff', 'chart_average': '#6fbf7f', 'chart_grid': '#22382a',
+        'chart_moment': '#ffffff', 'chart_average': '#6fbf7f', 'chart_grid': '#22382a', 'special': '#ffffff',
     },
     'Magic': { # Blue main, light blue accent, light grey special
         'window': '#0c1420', 'panel': '#121d2c', 'panel_alt': '#172435', 'header': '#080e17', 'header_text': '#d6dbe2', 'tab': '#1a2c44',
@@ -127,7 +127,7 @@ THEMES = {
         'primary': '#198de6', 'primary_hover': '#3ea2ee', 'primary_text': '#ffffff',
         'accent': '#8fd3ff', 'accent_hover': '#b0e0ff', 'accent_text': '#04213a',
         'selection': '#153f66', 'success': '#8ff0a4', 'error': '#f87171',
-        'chart_moment': '#d6dbe2', 'chart_average': '#8fd3ff', 'chart_grid': '#20324a',
+        'chart_moment': '#d6dbe2', 'chart_average': '#8fd3ff', 'chart_grid': '#20324a', 'special': '#d6dbe2',
     },
     'Summoning': { # Purple main, pink accent, light grey special
         'window': '#170f1c', 'panel': '#211628', 'panel_alt': '#281a31', 'header': '#100a14', 'header_text': '#d6d3dc', 'tab': '#352242',
@@ -135,7 +135,7 @@ THEMES = {
         'primary': '#ba4ddb', 'primary_hover': '#c96ae3', 'primary_text': '#ffffff',
         'accent': '#ff6fb5', 'accent_hover': '#ff8fc5', 'accent_text': '#2a0718',
         'selection': '#4d2a5e', 'success': '#4ade80', 'error': '#f87171',
-        'chart_moment': '#d6d3dc', 'chart_average': '#ff6fb5', 'chart_grid': '#35243f',
+        'chart_moment': '#d6d3dc', 'chart_average': '#ff6fb5', 'chart_grid': '#35243f', 'special': '#d6d3dc',
     },
 }
 DEFAULT_THEME = 'Sunset dark'
@@ -147,6 +147,11 @@ _current = dict(THEMES[DEFAULT_THEME])
 def color(name):
     """A color of the current theme, for widgets that draw themselves (e.g. the DPS chart)"""
     return QColor(_current[name])
+
+
+def special_color():
+    """The theme's special color (combat themes: white or light grey), for notes that should stand out; others: accent"""
+    return QColor(_current.get('special', _current['accent']))
 
 
 def progress_color():

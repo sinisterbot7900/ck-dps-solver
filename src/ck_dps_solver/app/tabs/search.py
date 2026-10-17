@@ -5,7 +5,7 @@ import datetime
 import os
 
 from PySide6.QtCore import QPointF, QRect, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QKeySequence, QPainter, QPixmap, QPolygonF, QShortcut
+from PySide6.QtGui import QFont, QFontMetrics, QIcon, QKeySequence, QPainter, QPixmap, QPolygonF, QShortcut
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QMessageBox, QPlainTextEdit,
                                QProgressBar, QPushButton, QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
@@ -47,16 +47,46 @@ def run_icon(stop=False):
     return QIcon(pixmap)
 
 
+SETTING_NAMES = {'skill_levels': 'skill levels', 'perk_trees': 'talents', 'consumables': 'food and potions', 'biomes': 'progression',
+                 'save_filter': 'items searched', 'fixed_items': 'always equipped', 'best_fixed': 'always equipped', 'top_n': 'loadouts to keep',
+                 'drop_dominated': 'skip dominated items', 'search_pets': 'always equipped', 'search_lanterns': 'always equipped',
+                 'search_bags': 'always equipped', 'dish_rarity': 'dish rarity', 'golden_ingredients': 'golden ingredients',
+                 'suggest_upgrades': 'upgrade suggestions'}
+IGNORED_CHANGES = {'output', 'damage_type'} # Where results are written doesn't change them; damage types clear them
+
+
+def changed_settings(old, new, damage_type):
+    """What differs between the settings a run used and the current ones, in words (e.g. ['Fight length', 'Range talents'])"""
+    found = []
+    for key in sorted(set(old) | set(new)):
+        if key in IGNORED_CHANGES:
+            continue
+        a, b = old.get(key), new.get(key)
+        if key in ('consumables', 'fixed_items'): # Only the run's damage type's
+            a, b = (a or {}).get(damage_type), (b or {}).get(damage_type)
+        if a == b:
+            continue
+        if key == 'settings':
+            found += [name for name in b if a.get(name) != b.get(name)]
+        elif key in ('perk_trees', 'skill_levels'):
+            what = 'talents' if key == 'perk_trees' else 'level'
+            found += [f'{skill} {what}' for skill in b if (a or {}).get(skill) != b.get(skill)]
+        else:
+            found.append(SETTING_NAMES.get(key, key.replace('_', ' ')))
+    return list(dict.fromkeys(found))
+
+
 class RunBar(QProgressBar):
     """The progress bar with the search's status written on it: the text over the filled part takes a color that reads
     on the fill, the rest the normal text color"""
     def __init__(self):
         super().__init__()
         self.setTextVisible(False) # Drawn below
-        self.label = ''
+        self.label, self.note = '', ''
 
-    def setText(self, text):
-        self.label = text
+    def setText(self, text, note=''):
+        """The status, and an optional note after it in bold, in the theme's special color (e.g. "settings changed")"""
+        self.label, self.note = text, note
         self.update()
 
     def text(self):
@@ -66,12 +96,22 @@ class RunBar(QProgressBar):
         super().paintEvent(event)
         span = self.maximum() - self.minimum()
         filled = 0 if span <= 0 else round(self.width() * (self.value() - self.minimum()) / span) # Busy: no fill
+        plain = self.label + (' \u00b7 ' if self.note else '')
+        bold = QFont(self.font()); bold.setBold(True)
+        width = QFontMetrics(self.font()).horizontalAdvance(plain) + (QFontMetrics(bold).horizontalAdvance(self.note) if self.note else 0)
+        x = (self.width() - width) // 2
         painter = QPainter(self)
-        for clip, color in ((QRect(0, 0, filled, self.height()), theme.readable_on(theme.progress_color())),
-                            (QRect(filled, 0, self.width() - filled, self.height()), theme.color('text'))):
+        for clip, color, note_color in ((QRect(0, 0, filled, self.height()), theme.readable_on(theme.progress_color()), None),
+                                        (QRect(filled, 0, self.width() - filled, self.height()), theme.color('text'), theme.special_color())):
             painter.setClipRect(clip)
+            painter.setFont(self.font())
             painter.setPen(color)
-            painter.drawText(self.rect(), Qt.AlignCenter, self.label)
+            painter.drawText(QRect(x, 0, self.width(), self.height()), Qt.AlignLeft | Qt.AlignVCenter, plain)
+            if self.note:
+                painter.setFont(bold)
+                painter.setPen(note_color or color)
+                painter.drawText(QRect(x + QFontMetrics(self.font()).horizontalAdvance(plain), 0, self.width(), self.height()),
+                                 Qt.AlignLeft | Qt.AlignVCenter, self.note)
         painter.end()
 
 
@@ -208,7 +248,9 @@ class SearchTab(QWidget):
         self.hover_cache = {}
         store.changed.connect(lambda path: self.update_upgrades_tab() if path in ('', 'save_filter', 'save_filter.enabled') else None)
         store.changed.connect(lambda path: self.damage_type_changed() if path in ('', 'damage_type') else None)
+        store.changed.connect(lambda path: self.check_stale())
         self.shown_damage_type = None # Damage type of the results on screen (None: nothing shown)
+        self.shown_entry = None # History entry on screen (its settings decide if the results are out of date)
         self.update_upgrades_tab()
 
         self.details = LoadoutDetails() # The clicked loadout: DPS curve, character sheet, where stats come from
@@ -292,6 +334,7 @@ class SearchTab(QWidget):
             return
         self.store.save()
         self.shown_damage_type = config['damage_type'] # Its results will show here; switching damage type is locked until it ends
+        self.run_config = config # The settings this run uses (changes during it don't apply)
         biomes = config.get('biomes')
         self.run_label = (f"{config['damage_type']}, {'owned items' if config['save_filter']['enabled'] else 'every item'}, "
                           f"{'up to ' + biomes[-1] if biomes else 'all biomes'}")
@@ -330,11 +373,29 @@ class SearchTab(QWidget):
                 elif widget.property('tip_before_run') is not None:
                     widget.setToolTip(widget.property('tip_before_run'))
 
+    def check_stale(self):
+        """Results shown with other settings than the current ones: say so on the bar (its fill empties), and list the
+        changes on hover"""
+        if self.running or self.shown_entry is None:
+            return
+        entry = self.shown_entry
+        changes = changed_settings(entry['config'], self.store.search_config(), entry['damage_type'])
+        text = self.status.text()
+        if changes:
+            self.progress.setRange(0, 1); self.progress.setValue(0)
+            self.progress.setToolTip('These results use the settings from when the search started. Changed since: '
+                                     + ', '.join(changes) + '. Run again to include them.')
+            self.status.setText(text, note='settings changed')
+        else:
+            self.progress.setRange(0, 1); self.progress.setValue(1)
+            self.progress.setToolTip('')
+            self.status.setText(text)
+
     def damage_type_changed(self):
         """Results show only for their damage type: switching to another clears them (the run stays in the history)"""
         if self.running or self.shown_damage_type in (None, self.store.get('damage_type')):
             return
-        self.shown_damage_type = None
+        self.shown_damage_type = self.shown_entry = None
         self.loadouts.set_rows([])
         self.upgrades.set_rows([])
         self.all_rows, self.info = [], None
@@ -383,7 +444,7 @@ class SearchTab(QWidget):
         best = f"{self.all_rows[0][1][0]:,} DPS" if self.all_rows else 'no loadouts'
         self.history.insert(0, {'label': f"{datetime.datetime.now():%H:%M} {self.run_label}: {best}", 'info': info, 'rows': self.all_rows,
                                 'upgrades': list(self.upgrades.source.rows), 'status': self.status.text(), 'damage_type': self.shown_damage_type,
-                                'log': self.log_box.toPlainText()})
+                                'log': self.log_box.toPlainText(), 'config': self.run_config})
         del self.history[HISTORY_SIZE:]
         self.history_box.blockSignals(True)
         self.history_box.clear()
@@ -391,6 +452,8 @@ class SearchTab(QWidget):
         self.history_box.setCurrentIndex(0)
         self.history_box.blockSignals(False)
         self.history_box.setVisible(bool(self.history))
+        self.shown_entry = self.history[0]
+        self.check_stale()
 
     def show_history(self, index):
         """Show an earlier run's results again"""
@@ -408,6 +471,8 @@ class SearchTab(QWidget):
         self.upgrades.set_rows(entry['upgrades'])
         self.upgrades.sortByColumn(labels.UPGRADE_COLUMNS.index('Gain %'), Qt.DescendingOrder)
         self.status.setText(entry['status'] if index == 0 else f"Showing an earlier run ({entry['label'].split(' ')[0]})")
+        self.shown_entry = entry
+        self.check_stale()
 
     def loadout_menu(self, row_id):
         """Right-click actions for a loadout: pin it to compare others with it"""
