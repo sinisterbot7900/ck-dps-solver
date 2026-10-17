@@ -160,13 +160,13 @@ class Character():
             'Druidra soul': True,       # +10% max health (Summoning: Heartbound horde)
             'Cursed target': True,      # Summoning: your scepter's curse works on the target (minions deal 40% more damage)
             'Summon active': True,
-            'Not hit': False,           # Pandorium set: you haven't taken damage
-            'Kill stacks': False,       # Scarlet set: 5 kill stacks of crit chance
-            'Recently dodged': False,   # Assassin set: attack speed after a dodge
-            'Burning': False,           # Welder set: you are burning (so your hits set targets burning too)
-            'Recently mined': False,    # Carapace set: damage after mining a wall
+            'Not hit': True,            # Pandorium set: you haven't taken damage
+            'Kill stacks': True,        # Scarlet set: 5 kill stacks of crit chance
+            'Recently dodged': True,    # Assassin set: attack speed after a dodge
+            'Burning': True,            # Welder set: you are burning (so your hits set targets burning too)
+            'Recently mined': True,     # Carapace set: damage after mining a wall
             'Vs boss': True,            # Target is a boss: damage against bosses applies
-            'Adjacent to water': False, # Magic: standing next to water (Swamp Mage set, Lily Pad items)
+            'Adjacent to water': True,  # Magic: standing next to water (Swamp Mage set, Lily Pad items)
             'Full barrier': True,       # Magic: your magic barrier is full (not worn down by hits), for barrier-based damage and mana
             'Fight length': 60,         # Seconds of continuous attacking, starting at full mana and with unpoisoned targets (a number, not on/off)
             'Permanent max health': 590, # Max health from permanent foods eaten (all ten: 590; read from the save when a character is loaded)
