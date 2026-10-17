@@ -88,13 +88,15 @@ class SearchTab(QWidget):
 
         # Options
         options = QHBoxLayout()
-        options.addWidget(QLabel('Output CSV'))
-        output = bind.line(store, 'output', '{damage_type} is replaced by the damage type')
+        output_help = ('Where the best loadouts are saved as a spreadsheet (CSV).\n'
+                       '{damage_type} is replaced by the damage type, e.g. outputs/melee_dps.csv.\n'
+                       'A relative path is inside your user folder (%LOCALAPPDATA%\\ck-dps-solver).')
+        output_label = QLabel('Output CSV')
+        output_label.setToolTip(output_help)
+        options.addWidget(output_label)
+        output = bind.line(store, 'output', output_help)
         output.setMinimumWidth(420)
         options.addWidget(output)
-        hint = QLabel('{damage_type} is replaced by the damage type')
-        hint.setProperty('muted', True)
-        options.addWidget(hint)
         options.addStretch()
         self.advanced_button = QPushButton('Advanced settings')
         self.advanced_button.setCheckable(True)
@@ -166,7 +168,7 @@ class SearchTab(QWidget):
         corner = QWidget()
         filters = QHBoxLayout(corner)
         filters.setContentsMargins(0, 0, 0, 4)
-        open_csv = QPushButton('Open CSV')
+        open_csv = QPushButton('Open results CSV')
         open_csv.setToolTip('Open the search\'s loadouts file')
         open_csv.clicked.connect(self.open_csv)
         filters.addWidget(open_csv)
