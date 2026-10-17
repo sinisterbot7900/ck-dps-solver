@@ -91,6 +91,22 @@ def boss_exclusive_biome(internal_id):
     return BIOME_NAMES[min(found)] if found else None
 
 
+# Soul settings and the boss whose soul each is. A soul is a gate boss's reward, so like its drops it counts from the
+# next tier: with progression up to the boss's own biome, you haven't beaten it yet.
+SOUL_BOSSES = {'Druidra soul': 'Druidra the Wild Titan', 'Pyrdra soul': 'Pyrdra the Fire Titan'}
+
+
+def boss_unlock_biome(boss):
+    """The biome from which a boss counts as beaten: the next one for gate bosses, its own for optional ones"""
+    tier = next(i for i, (_, _, bosses) in enumerate(BIOMES) if boss in bosses)
+    return BIOME_NAMES[tier if boss in OPTIONAL_BOSSES else min(tier + 1, len(BIOME_NAMES) - 1)]
+
+
+def souls_reached(biomes):
+    """{soul setting: whether progression has reached it} (biomes None = everything)"""
+    return {setting: biomes is None or boss_unlock_biome(boss) in biomes for setting, boss in SOUL_BOSSES.items()}
+
+
 def _chance(source):
     """Chance of getting at least one per kill or chest (crafting at a boss's statue is certain)"""
     if 'station' in source:

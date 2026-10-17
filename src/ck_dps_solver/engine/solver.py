@@ -26,7 +26,7 @@ from ck_dps_solver.model.character import count_set_pieces
 from ck_dps_solver.model.consumables import DEFAULT_DISH_RARITY, combine, default_keys, lookup as consumable_lookup
 from ck_dps_solver.model.item_stats import find_internal_id, make_item
 from ck_dps_solver.model.pets import catalogue_pets
-from ck_dps_solver.model.progression import filter_items
+from ck_dps_solver.model.progression import filter_items, souls_reached
 from ck_dps_solver.model.summoning import summoner_kits
 from ck_dps_solver.saves.owned_items import empty_item, owned_search_items
 from ck_dps_solver.saves.save_reader import base_level, permanent_max_health, read_character_stats, read_owned, soul_settings
@@ -228,6 +228,11 @@ def run_search(config, progress=None, should_stop=None, log=print):
             keys = best_consumables(damage_type, config['skill_levels'], config['perk_trees'], config['biomes'], rarity, golden)
         config['consumables'] = dict(config['consumables'], **{damage_type: keys})
         log('Biome check: items at their base level; food and potions from these biomes: ' + ', '.join(consumable_lookup(k, rarity, golden).name for k in keys))
+        # Souls of bosses that progression hasn't reached yet don't count
+        unreached = [setting for setting, reached in souls_reached(config['biomes']).items() if not reached and config['settings'].get(setting)]
+        if unreached:
+            config['settings'] = dict(config['settings'], **{setting: False for setting in unreached})
+            log(f"Not reached yet with this progression, so off: {', '.join(unreached)}")
     if config['save_filter']['enabled']:
         weapons, slots, ring_copies, fixed, pets, other = owned_search_items_for(damage_type, config, log, return_pets=True)
         searchable = {'Lantern': list(other.get('Lantern', [])), 'Bag': list(other.get('Bag', []))}

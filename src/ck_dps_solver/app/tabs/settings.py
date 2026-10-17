@@ -6,7 +6,7 @@ import itertools
 from PySide6.QtWidgets import QButtonGroup, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from ck_dps_solver import defaults
-from ck_dps_solver.model.progression import BIOME_NAMES, consumable_biome
+from ck_dps_solver.model.progression import BIOME_NAMES, consumable_biome, souls_reached
 from ck_dps_solver.model.sources import sources
 from ck_dps_solver.saves.save_reader import permanent_health_food_ids, permanent_health_foods
 
@@ -143,6 +143,7 @@ class SettingsTab(QWidget):
         if store.get('permanent_health_foods') is None: # Older configs: the foods that add up to the saved total
             store.set('permanent_health_foods', self.foods_for(store.get(f'settings.{PERMANENT}') or 0))
         store.changed.connect(lambda path: self.refresh_foods() if path in ('', 'permanent_health_foods', f'settings.{PERMANENT}', 'biomes') else None)
+        store.changed.connect(self.gate_souls)
         self.refresh_foods()
 
     # ------------------------------------------------------------ permanent max health
@@ -186,6 +187,14 @@ class SettingsTab(QWidget):
 
     def all_changed(self, on):
         self.set_foods({c for c, *_ in self.foods} if on else set())
+
+    def gate_souls(self, path):
+        """Searching every item: soul switches follow the progression (on once its boss is beaten, off before). With
+        your own items, souls come from the save instead (Load)."""
+        if path not in ('biomes', 'save_filter.enabled') or self.store.get('save_filter.enabled'):
+            return
+        for setting, reached in souls_reached(self.store.get('biomes')).items():
+            self.store.set(f'settings.{setting}', reached)
 
     def refresh_foods(self):
         foods = self.chosen()
