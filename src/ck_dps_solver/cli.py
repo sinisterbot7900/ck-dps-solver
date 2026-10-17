@@ -44,6 +44,9 @@ def build_config(args):
     config = merge_config(default_config(args.damage_type or changes.get('damage_type')), changes)
     if args.damage_type:
         config['damage_type'] = args.damage_type
+    if 'perk_trees' not in changes: # The default talents also follow the mana strategy
+        from ck_dps_solver.defaults import perk_trees_for
+        config['perk_trees'] = perk_trees_for(config['damage_type'], config['settings'].get('Burst at full mana', True))
     if args.top is not None:
         config['top_n'] = args.top
     if args.character or args.world:

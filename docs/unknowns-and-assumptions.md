@@ -114,7 +114,7 @@ Each item lists its unmodeled effects in `src/ck_dps_solver/catalogue.py` ("Not 
 - **Chests.** Storage chests (including the Iron Chest) count fully. Loot chests (dungeons, ruins) only count items
   you've picked up before, so unlooted dungeon loot isn't treated as yours.
   Test: if an item shows as owned but you don't have it, or the other way round, report which chest it's in.
-- **Chest range.** Only chests within 300 tiles of your character count (Items tab, advanced settings).
+- **Chest range.** Only chests within 50 tiles of your character count by default (Items tab, advanced settings).
 - **Save timing.** The game only writes its save now and then, so recent changes may not show until you quit to the
   menu. How often it saves isn't known.
 

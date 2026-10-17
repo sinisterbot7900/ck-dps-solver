@@ -57,9 +57,17 @@ PERK_TREES_FOR = {
 }
 
 
-def perk_trees_for(damage_type):
-    """The default talents for a damage type: perk_trees with its PERK_TREES_FOR changes"""
-    return copy.deepcopy(dict(perk_trees, **PERK_TREES_FOR.get(damage_type, {})))
+# With "Burst at full mana" off (attacking whenever there's mana), the trees that do better another way, per damage type
+PERK_TREES_WITHOUT_BURST = {}
+
+
+def perk_trees_for(damage_type, burst=True):
+    """The default talents for a damage type: perk_trees with its PERK_TREES_FOR changes (and PERK_TREES_WITHOUT_BURST's
+    when "Burst at full mana" is off)"""
+    trees = dict(perk_trees, **PERK_TREES_FOR.get(damage_type, {}))
+    if not burst:
+        trees.update(PERK_TREES_WITHOUT_BURST.get(damage_type, {}))
+    return copy.deepcopy(trees)
 
 # Food and potions per damage type: keys of model/consumables.py sources (see the Consumables tab).
 # Default: the strongest dish or potion for each effect the damage type uses. Same-effect sources don't stack.
@@ -109,7 +117,7 @@ SAVE_FILTER = {
     'enabled': False,
     'player_files': [],                         # Equipped and inventory items
     'world_files': [],                          # Items stored in chests
-    'radius': 300,                              # Only chests within this many tiles (None = whole world, including generated loot chests)
+    'radius': 50,                               # Only chests within this many tiles (None = whole world, including generated loot chests)
     'center': None,                             # (x, z) to measure from; None = your character's position in the world
     'reinforcement': 'assume',                  # 'assume': owned gear counts as reinforced; 'detected': only gear the save shows as reinforced
     'level': 'actual',                          # 'actual': items at their level in the save; 'max': as if every item were upgraded to level 20

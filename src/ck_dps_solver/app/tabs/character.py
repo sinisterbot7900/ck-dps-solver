@@ -271,7 +271,7 @@ class CharacterTab(QWidget):
         outer.addWidget(self.panel, 1)
 
         self.selected = None
-        self.damage_type = store.get('damage_type')
+        self.damage_type, self.bursting = store.get('damage_type'), self.burst()
         store.changed.connect(lambda path: self.refresh() if path == '' or path.startswith(('skill_levels', 'perk_trees', 'damage_type')) else None)
         store.changed.connect(self.damage_type_changed)
         self.select(DAMAGE_TYPE_SKILL.get(store.get('damage_type'), self.skills[0]))
@@ -330,33 +330,38 @@ class CharacterTab(QWidget):
         """A skill's level and talents from defaults.py (skill_levels, and the damage type's perk_trees_for)"""
         level = defaults.skill_levels.get(skill, 0)
         self.store.set(f'skill_levels.{skill}', level)
-        tree = defaults.perk_trees_for(self.store.get('damage_type')).get(skill, [0] * 8)
+        tree = defaults.perk_trees_for(self.store.get('damage_type'), self.burst()).get(skill, [0] * 8)
         self.set_points(skill, talents.fit_to_level(skill, level, tree))
         if log:
             self.log(f'{skill}: level and talents set to the defaults')
 
+    def burst(self):
+        return bool(self.store.get('settings.Burst at full mana', True))
+
     def damage_type_changed(self, path):
-        """Talents still at the old damage type's defaults follow to the new one's (defaults.PERK_TREES_FOR); talents you
-        set or loaded from a save stay"""
-        if path not in ('', 'damage_type'):
+        """Talents still at the old defaults follow to the new ones when the damage type or the mana strategy ("Burst at
+        full mana") changes (defaults.perk_trees_for); talents you set or loaded from a save stay"""
+        if path not in ('', 'damage_type', 'settings.Burst at full mana'):
             return
-        old, new = self.damage_type, self.store.get('damage_type')
-        self.damage_type = new
+        old, new = (self.damage_type, self.bursting), (self.store.get('damage_type'), self.burst())
+        self.damage_type, self.bursting = new
         if path == '' or old == new:
             return
-        before, after = defaults.perk_trees_for(old), defaults.perk_trees_for(new)
+        before, after = defaults.perk_trees_for(*old), defaults.perk_trees_for(*new)
         moved = [skill for skill in after if after[skill] != before.get(skill) and self.points(skill) == before.get(skill)
                  and talents.is_legal(skill, self.level(skill), after[skill])]
         for skill in moved:
             self.set_points(skill, after[skill])
         if moved:
-            self.log(f"{', '.join(moved)}: talents set to the {new} defaults")
+            strategy = '' if new[1] else ' (without bursting at full mana)'
+            self.log(f"{', '.join(moved)}: talents set to the {new[0]} defaults{strategy}")
 
     def defaults(self):
         """Every skill to its default level and the damage type's best talents"""
         for skill in self.skills:
             self.default_skill(skill, log=False)
-        self.log(f"All skills set to the defaults: level 100 and the best talents for {self.store.get('damage_type')}")
+        strategy = '' if self.burst() else ' (without bursting at full mana)'
+        self.log(f"All skills set to the defaults: level 100 and the best talents for {self.store.get('damage_type')}{strategy}")
 
     # ------------------------------------------------------------ show
 
